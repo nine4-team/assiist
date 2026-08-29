@@ -1,0 +1,1308 @@
+{% extends "layout.html" %}
+
+{% block title %}GenAI Requests - Admin Portal{% endblock %}
+
+{% block styles %}
+<style>
+.json-viewer {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border-color);
+}
+
+.json-section {
+    margin-bottom: 20px;
+    padding: 16px;
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-card);
+}
+
+.json-section-title {
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--accent-primary);
+    font-size: 1rem;
+}
+
+.json-item {
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+}
+
+.json-label {
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+}
+
+.json-value {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    white-space: pre-wrap;
+    background: var(--bg-secondary);
+    padding: 12px;
+    border-radius: 8px;
+    overflow-x: auto;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 15, 35, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    z-index: 1050;
+    backdrop-filter: blur(4px);
+}
+
+.loading-spinner {
+    width: 3rem;
+    height: 3rem;
+    color: var(--accent-primary);
+}
+
+.loading-text {
+    color: var(--text-primary);
+    margin-top: 1rem;
+    font-weight: 500;
+}
+
+.modal-content {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+}
+
+.modal-header {
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+    border-bottom: 1px solid var(--border-color);
+    padding: 1.25rem 1.5rem;
+}
+
+.modal-title {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.modal-body {
+    background: var(--bg-primary);
+    position: relative;
+    min-height: 200px;
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+    padding: 1rem 1.5rem;
+}
+
+.badge {
+    font-weight: 500;
+    padding: 0.5em 0.75em;
+    border-radius: 6px;
+    font-size: 0.85rem;
+}
+
+.badge.completed {
+    background: #28a745;
+    color: white;
+}
+
+.badge.pending {
+    background: #ffc107;
+    color: #000;
+}
+
+.badge.processing {
+    background: #17a2b8;
+    color: white;
+}
+
+.badge.error {
+    background: var(--accent-primary);
+    color: white;
+}
+
+/* Input styling to match admin theme */
+.modal-body .form-control {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    border-radius: 8px;
+}
+
+.modal-body .input-group-text {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+
+.modal-body .btn-outline-secondary {
+    border-color: var(--border-color);
+    color: var(--text-secondary);
+}
+
+.modal-body .btn-outline-secondary:hover {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: white;
+}
+
+/* Scrollbar styling */
+.modal-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+    background: var(--accent-primary);
+    border-radius: 4px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+    background: #f76b8a;
+}
+
+/* New structured data display styles */
+.request-details-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.detail-section {
+    margin-bottom: 20px;
+    padding: 16px;
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-card);
+}
+
+.detail-section-title {
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--accent-primary);
+    font-size: 1.1rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 8px;
+}
+
+.detail-item {
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+}
+
+.detail-label {
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+}
+
+.data-subsection {
+    margin-bottom: 20px;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.data-subsection-title {
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: var(--text-primary);
+    font-size: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 6px;
+}
+
+.data-table table {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.data-table th {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border-color: var(--border-color);
+}
+
+.data-table td {
+    border-color: var(--border-color);
+}
+
+.note-content {
+    background: var(--bg-primary);
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.5;
+}
+
+.language-examples {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.example-item {
+    background: var(--bg-primary);
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+.example-header {
+    background: var(--bg-tertiary);
+    padding: 8px 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.example-content {
+    padding: 12px;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.4;
+}
+
+.tasks-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.task-item {
+    background: var(--bg-primary);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    padding: 12px;
+}
+
+.task-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.task-number {
+    background: var(--accent-primary);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.task-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    flex-grow: 1;
+}
+
+.task-body {
+    background: var(--bg-secondary);
+    padding: 10px;
+    border-radius: 6px;
+    margin: 8px 0;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+.task-metadata {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.metadata-item {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.generated-tasks {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.generated-task-item {
+    background: var(--bg-primary);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    padding: 16px;
+    box-shadow: var(--shadow-card);
+}
+
+.task-section {
+    margin: 12px 0;
+}
+
+.task-section-title {
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+}
+
+.assistant-message {
+    background: var(--bg-secondary);
+    padding: 12px;
+    border-radius: 6px;
+    border-left: 3px solid var(--accent-primary);
+    color: var(--text-primary);
+    font-style: italic;
+    line-height: 1.4;
+}
+
+.task-metadata-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin: 12px 0;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border-radius: 6px;
+}
+
+.task-metadata-grid .metadata-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.metadata-label {
+    font-weight: 500;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.metadata-value {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.justifications {
+    background: var(--bg-secondary);
+    padding: 12px;
+    border-radius: 6px;
+    margin-top: 12px;
+}
+
+.justifications-title {
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 4px;
+}
+
+.justification-item {
+    margin-bottom: 8px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.generic-content {
+    background: var(--bg-secondary);
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.5;
+}
+
+.generic-object {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.object-item {
+    background: var(--bg-secondary);
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+}
+
+.object-key {
+    font-weight: 600;
+    color: var(--accent-primary);
+    margin-bottom: 8px;
+    display: block;
+    font-size: 0.9rem;
+}
+
+.object-value {
+    color: var(--text-primary);
+}
+
+.array-content {
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+.array-item {
+    background: var(--bg-primary);
+    padding: 8px;
+    border-radius: 4px;
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+}
+
+.json-content {
+    background: var(--bg-primary);
+    padding: 10px;
+    border-radius: 4px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    overflow-x: auto;
+}
+
+.simple-value {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.metadata-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.metadata-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 8px;
+    background: var(--bg-secondary);
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+}
+
+.metadata-key {
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 150px;
+    font-size: 0.9rem;
+}
+
+.metadata-value {
+    color: var(--text-primary);
+    flex-grow: 1;
+}
+
+.metadata-json {
+    background: var(--bg-primary);
+    padding: 8px;
+    border-radius: 4px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    overflow-x: auto;
+    margin: 0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">GenAI Requests</h5>
+                    <div class="d-flex gap-2">
+                        <select id="requestTypeFilter" class="form-select form-select-sm" style="width: auto;">
+                            <option value="">All Request Types</option>
+                            <option value="update_tasks">Update Tasks</option>
+                            <option value="quick_draft">Quick Draft</option>
+                            <option value="revise_draft">Revise Draft</option>
+                            <option value="process_note">Process Note</option>
+                            <option value="update_context">Update Context</option>
+                        </select>
+                        <select id="statusFilter" class="form-select form-select-sm" style="width: auto;">
+                            <option value="">All Statuses</option>
+                            <option value="pending">Pending</option>
+                            <option value="processing">Processing</option>
+                            <option value="completed">Completed</option>
+                            <option value="error">Error</option>
+                        </select>
+                        <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Search requests..." style="width: 200px;">
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="requestsTableContainer">
+                        <!-- Table will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Request Details Modal -->
+<div class="modal fade" id="requestDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Request Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Loading Overlay -->
+                <div id="loadingOverlay" class="loading-overlay">
+                    <div class="spinner-border loading-spinner text-light" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <div class="loading-text">Loading request details...</div>
+                </div>
+
+                <!-- Request Details Container -->
+                <div id="requestDetailsContainer" class="request-details-container">
+                    <!-- Basic Information Section -->
+                    <div class="detail-section">
+                        <div class="detail-section-title">Basic Information</div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="detail-item">
+                                    <span class="detail-label">Request ID</span>
+                                    <div class="input-group">
+                                        <input type="text" id="requestId" class="form-control font-monospace" readonly>
+                                        <button class="btn btn-outline-secondary" onclick="copyToClipboard(document.getElementById('requestId').value)">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="detail-item">
+                                    <span class="detail-label">Status</span>
+                                    <div id="requestStatus"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="detail-item">
+                                    <span class="detail-label">Request Type</span>
+                                    <input type="text" id="requestType" class="form-control" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="detail-item">
+                                    <span class="detail-label">Created At</span>
+                                    <input type="text" id="createdAt" class="form-control" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="detail-item">
+                                    <span class="detail-label">User ID</span>
+                                    <div class="input-group">
+                                        <input type="text" id="userId" class="form-control font-monospace" readonly>
+                                        <button class="btn btn-outline-secondary" onclick="copyToClipboard(document.getElementById('userId').value)">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="detail-item">
+                                    <span class="detail-label">Account ID</span>
+                                    <div class="input-group">
+                                        <input type="text" id="accountId" class="form-control font-monospace" readonly>
+                                        <button class="btn btn-outline-secondary" onclick="copyToClipboard(document.getElementById('accountId').value)">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Request Data Section -->
+                    <div class="detail-section">
+                        <div class="detail-section-title">Request Data</div>
+                        <div id="requestDataContent"></div>
+                    </div>
+
+                    <!-- Result Data Section -->
+                    <div class="detail-section">
+                        <div class="detail-section-title">Result Data</div>
+                        <div id="resultDataContent"></div>
+                    </div>
+
+                    <!-- Error Information -->
+                    <div id="errorSection" class="detail-section d-none">
+                        <div class="detail-section-title">Error Information</div>
+                        <div class="alert alert-danger" id="errorMessage"></div>
+                    </div>
+
+                    <!-- Processing Metadata -->
+                    <div class="detail-section">
+                        <div class="detail-section-title">Processing Metadata</div>
+                        <div id="metadataContent"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="copyFullRequestJSON()">
+                    <i class="fas fa-copy"></i> Copy Full JSON
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Initialize page-specific functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize the requests table with custom action buttons
+    window.requestsTable = new DataTable('requestsTableContainer', {
+        searchable: true,
+        sortable: true,
+        generateActionButtons: function(row) {
+            return `
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-primary" 
+                            onclick="viewRequestDetails('${row.id}')" title="View Details">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            `;
+        }
+    });
+
+    // Load initial data
+    loadRequests();
+
+    // Add filter change handlers
+    document.getElementById('requestTypeFilter').addEventListener('change', loadRequests);
+    document.getElementById('statusFilter').addEventListener('change', loadRequests);
+    document.getElementById('searchInput').addEventListener('input', debounce(loadRequests, 300));
+});
+
+async function loadRequests() {
+    try {
+        showLoading('Loading Requests', 'Please wait while we fetch the requests...');
+
+        const requestType = document.getElementById('requestTypeFilter').value;
+        const requestStatus = document.getElementById('statusFilter').value;
+        const searchTerm = document.getElementById('searchInput').value;
+
+        const response = await adminAPI.getGenAIRequests({
+            request_type: requestType,
+            request_status: requestStatus,
+            search: searchTerm
+        });
+
+        const requests = response.data || [];
+        
+        // Transform data for display
+        const tableData = requests.map(request => ({
+            id: request.id,
+            type: request.request_type,
+            status: formatStatus(request.status),
+            user_id: request.user_id,
+            created_at: request.created_at,
+            account_id: request.account_id
+        }));
+
+        window.requestsTable.setData(tableData);
+        hideLoading();
+    } catch (error) {
+        hideLoading();
+        showError('Failed to load requests: ' + error.message);
+    }
+}
+
+function formatStatus(status) {
+    const statusClasses = {
+        'pending': 'bg-warning',
+        'processing': 'bg-info',
+        'completed': 'bg-success',
+        'error': 'bg-danger'
+    };
+
+    const badgeClass = statusClasses[status] || 'bg-secondary';
+    return `<span class="badge ${badgeClass}">${status}</span>`;
+}
+
+// Data formatters for different request types
+function formatUpdateTasksRequestData(data) {
+    if (!data) return '<div class="text-muted">No request data available</div>';
+    
+    let html = '';
+    
+    // Business Information
+    if (data.business_name || data.business_type || data.business_description) {
+        html += `
+            <div class="data-subsection">
+                <div class="data-subsection-title">Business Information</div>
+                <div class="data-table">
+                    <table class="table table-sm">
+                        <tbody>
+                            ${data.business_name ? `<tr><td class="fw-bold">Business Name</td><td>${data.business_name}</td></tr>` : ''}
+                            ${data.business_type ? `<tr><td class="fw-bold">Business Type</td><td>${data.business_type}</td></tr>` : ''}
+                            ${data.business_description ? `<tr><td class="fw-bold">Description</td><td>${data.business_description}</td></tr>` : ''}
+                            ${data.addressed_as ? `<tr><td class="fw-bold">Addressed As</td><td>${data.addressed_as}</td></tr>` : ''}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Contact Information
+    if (data.first_name || data.last_name || data.email || data.recipient_phone) {
+        html += `
+            <div class="data-subsection">
+                <div class="data-subsection-title">Contact Information</div>
+                <div class="data-table">
+                    <table class="table table-sm">
+                        <tbody>
+                            ${data.first_name ? `<tr><td class="fw-bold">First Name</td><td>${data.first_name}</td></tr>` : ''}
+                            ${data.last_name ? `<tr><td class="fw-bold">Last Name</td><td>${data.last_name}</td></tr>` : ''}
+                            ${data.email ? `<tr><td class="fw-bold">Email</td><td>${data.email}</td></tr>` : ''}
+                            ${data.recipient_phone ? `<tr><td class="fw-bold">Phone</td><td>${data.recipient_phone}</td></tr>` : ''}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Raw Note
+    if (data.raw_note) {
+        html += `
+            <div class="data-subsection">
+                <div class="data-subsection-title">Raw Note</div>
+                <div class="note-content">${data.raw_note}</div>
+            </div>
+        `;
+    }
+    
+    // Language Examples
+    if (data.language_examples) {
+        html += `
+            <div class="data-subsection">
+                <div class="data-subsection-title">Language Examples</div>
+                <div class="note-content">${data.language_examples || 'None provided'}</div>
+            </div>
+        `;
+    }
+    
+    // Availability Information
+    if (data.availability) {
+        html += `
+            <div class="data-subsection">
+                <div class="data-subsection-title">Availability Information</div>
+                <div class="data-table">
+                    <table class="table table-sm">
+                        <tbody>
+                            ${data.availability.time_range ? `<tr><td class="fw-bold">Time Range</td><td>${formatDate(data.availability.time_range.start)} to ${formatDate(data.availability.time_range.end)}</td></tr>` : ''}
+                            ${data.availability.total_busy_periods !== undefined ? `<tr><td class="fw-bold">Total Busy Periods</td><td>${data.availability.total_busy_periods}</td></tr>` : ''}
+                            ${data.availability.calendars_checked ? `<tr><td class="fw-bold">Calendars Checked</td><td>${data.availability.calendars_checked.length} calendars</td></tr>` : ''}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Existing Data Subsets
+    if (data.subset_tasks && data.subset_tasks.length > 0) {
+        html += `
+            <div class="data-subsection">
+                <div class="data-subsection-title">Existing Tasks (${data.subset_tasks.length})</div>
+                <div class="tasks-list">
+        `;
+        
+        data.subset_tasks.forEach((task, index) => {
+            html += `
+                <div class="task-item">
+                    <div class="task-header">
+                        <span class="task-number">#${index + 1}</span>
+                        <span class="task-title">${task.title || 'Untitled Task'}</span>
+                        ${task.type ? `<span class="badge bg-info ms-2">${task.type}</span>` : ''}
+                    </div>
+                    ${task.body ? `<div class="task-body">${task.body}</div>` : ''}
+                </div>
+            `;
+        });
+        
+        html += `</div></div>`;
+    }
+    
+    if (data.subset_notes && data.subset_notes.length > 0) {
+        html += `
+            <div class="data-subsection">
+                <div class="data-subsection-title">Existing Notes (${data.subset_notes.length})</div>
+                <div class="language-examples">
+        `;
+        
+        data.subset_notes.forEach((note, index) => {
+            html += `
+                <div class="example-item">
+                    <div class="example-header">Note ${index + 1}</div>
+                    <div class="example-content">${note}</div>
+                </div>
+            `;
+        });
+        
+        html += `</div></div>`;
+    }
+    
+    if (data.subset_appointments && data.subset_appointments.length > 0) {
+        html += `
+            <div class="data-subsection">
+                <div class="data-subsection-title">Existing Appointments (${data.subset_appointments.length})</div>
+                <div class="tasks-list">
+        `;
+        
+        data.subset_appointments.forEach((appointment, index) => {
+            html += `
+                <div class="task-item">
+                    <div class="task-header">
+                        <span class="task-number">#${index + 1}</span>
+                        <span class="task-title">${appointment.title || 'Untitled Appointment'}</span>
+                    </div>
+                    ${appointment.start_time ? `<div class="task-metadata"><strong>Start:</strong> ${formatDate(appointment.start_time)}</div>` : ''}
+                </div>
+            `;
+        });
+        
+        html += `</div></div>`;
+    }
+    
+    return html;
+}
+
+function formatUpdateTasksResultData(data) {
+    if (!data) return '<div class="text-muted">No result data available</div>';
+    
+    let html = '';
+    
+    // Error handling
+    if (data.errors && data.errors.length > 0) {
+        html += `<div class="alert alert-danger">Errors: ${data.errors.join(', ')}</div>`;
+    }
+    
+    // Created Tasks
+    if (data.created_tasks && data.created_tasks.length > 0) {
+        html += `
+            <div class="data-subsection">
+                <div class="data-subsection-title">Created Tasks (${data.created_tasks.length})</div>
+                <div class="generated-tasks">
+        `;
+        
+        data.created_tasks.forEach((task, index) => {
+            html += `
+                <div class="generated-task-item">
+                    <div class="task-header">
+                        <span class="task-number">#${index + 1}</span>
+                        <span class="task-title">${task.title || 'Untitled Task'}</span>
+                        ${task.type ? `<span class="badge bg-success ms-2">${task.type}</span>` : ''}
+                        ${task.id ? `<span class="badge bg-secondary ms-2">ID: ${task.id.substring(0, 8)}...</span>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += `</div></div>`;
+    }
+    
+    // Updated Tasks
+    if (data.updated_tasks && data.updated_tasks.length > 0) {
+        html += `
+            <div class="data-subsection">
+                <div class="data-subsection-title">Updated Tasks (${data.updated_tasks.length})</div>
+                <div class="generated-tasks">
+        `;
+        
+        data.updated_tasks.forEach((task, index) => {
+            html += `
+                <div class="generated-task-item">
+                    <div class="task-header">
+                        <span class="task-number">#${index + 1}</span>
+                        <span class="task-title">${task.title || 'Untitled Task'}</span>
+                        ${task.type ? `<span class="badge bg-warning ms-2">${task.type}</span>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += `</div></div>`;
+    }
+    
+    // Deleted Tasks
+    if (data.deleted_tasks && data.deleted_tasks.length > 0) {
+        html += `
+            <div class="data-subsection">
+                <div class="data-subsection-title">Deleted Tasks (${data.deleted_tasks.length})</div>
+                <div class="generated-tasks">
+        `;
+        
+        data.deleted_tasks.forEach((task, index) => {
+            html += `
+                <div class="generated-task-item">
+                    <div class="task-header">
+                        <span class="task-number">#${index + 1}</span>
+                        <span class="task-title">${task.title || 'Untitled Task'}</span>
+                        <span class="badge bg-danger ms-2">Deleted</span>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += `</div></div>`;
+    }
+    
+    // Kept Tasks
+    if (data.kept_tasks && data.kept_tasks.length > 0) {
+        html += `
+            <div class="data-subsection">
+                <div class="data-subsection-title">Kept Tasks (${data.kept_tasks.length})</div>
+                <div class="generated-tasks">
+        `;
+        
+        data.kept_tasks.forEach((task, index) => {
+            html += `
+                <div class="generated-task-item">
+                    <div class="task-header">
+                        <span class="task-number">#${index + 1}</span>
+                        <span class="task-title">${task.title || 'Untitled Task'}</span>
+                        <span class="badge bg-info ms-2">Kept</span>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += `</div></div>`;
+    }
+    
+    // Analysis Tables
+    if (data.analysis_tables) {
+        // Topics Table
+        if (data.analysis_tables.topics_table && data.analysis_tables.topics_table.length > 0) {
+            html += `
+                <div class="data-subsection">
+                    <div class="data-subsection-title">Topics Analysis (${data.analysis_tables.topics_table.length})</div>
+                    <div class="generated-tasks">
+            `;
+            
+            data.analysis_tables.topics_table.forEach((topic, index) => {
+                html += `
+                    <div class="generated-task-item">
+                        <div class="task-header">
+                            <span class="task-number">#${index + 1}</span>
+                            <span class="task-title">${topic.topic_description}</span>
+                            <span class="badge bg-primary ms-2">${topic.topic_status}</span>
+                        </div>
+                        
+                        <div class="task-metadata-grid">
+                            <div class="metadata-item">
+                                <span class="metadata-label">Relationship Importance</span>
+                                <span class="metadata-value">${topic.relationship_importance}</span>
+                            </div>
+                            <div class="metadata-item">
+                                <span class="metadata-label">Relevance Window</span>
+                                <span class="metadata-value">${topic.relevance_window}</span>
+                            </div>
+                            <div class="metadata-item">
+                                <span class="metadata-label">Immediate Message</span>
+                                <span class="metadata-value">${topic.immediate_message_task_warranted}</span>
+                            </div>
+                            <div class="metadata-item">
+                                <span class="metadata-label">Future Message</span>
+                                <span class="metadata-value">${topic.future_message_task_warranted}</span>
+                            </div>
+                        </div>
+                        
+                        ${topic.immediate_message_task_justification || topic.future_message_task_justification ? `
+                            <div class="justifications">
+                                <div class="justifications-title">Justifications</div>
+                                ${topic.immediate_message_task_justification ? `<div class="justification-item"><strong>Immediate Message:</strong> ${topic.immediate_message_task_justification}</div>` : ''}
+                                ${topic.future_message_task_justification ? `<div class="justification-item"><strong>Future Message:</strong> ${topic.future_message_task_justification}</div>` : ''}
+                                ${topic.immediate_action_task_justification ? `<div class="justification-item"><strong>Immediate Action:</strong> ${topic.immediate_action_task_justification}</div>` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+            
+            html += `</div></div>`;
+        }
+        
+        // Relationship Table
+        if (data.analysis_tables.relationship_table && data.analysis_tables.relationship_table.length > 0) {
+            html += `
+                <div class="data-subsection">
+                    <div class="data-subsection-title">Relationship Analysis</div>
+                    <div class="data-table">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Aspect</th>
+                                    <th>Details</th>
+                                    <th>Evidence</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+            
+            data.analysis_tables.relationship_table.forEach(rel => {
+                html += `
+                    <tr>
+                        <td class="fw-bold">${rel.aspect}</td>
+                        <td>${rel.details}</td>
+                        <td>${rel.evidence}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+    }
+    
+    // Task Metadata (detailed validation info)
+    if (data.task_metadata && data.task_metadata.length > 0) {
+        html += `
+            <div class="data-subsection">
+                <div class="data-subsection-title">Task Validation Details (${data.task_metadata.length})</div>
+                <div class="note-content">
+                    <strong>Validation data available for ${data.task_metadata.length} task(s)</strong><br>
+                    Includes: Task Creation, Claim Validation, and Task Validation details
+                </div>
+            </div>
+        `;
+    }
+    
+    return html;
+}
+
+function formatGenericData(data, title = 'Data') {
+    if (!data) return '<div class="text-muted">No data available</div>';
+    
+    if (typeof data === 'string') {
+        return `<div class="generic-content">${data}</div>`;
+    }
+    
+    if (typeof data === 'object') {
+        let html = '<div class="generic-object">';
+        
+        for (const [key, value] of Object.entries(data)) {
+            html += `
+                <div class="object-item">
+                    <span class="object-key">${key}</span>
+                    <div class="object-value">
+            `;
+            
+            if (typeof value === 'object' && value !== null) {
+                if (Array.isArray(value)) {
+                    html += `<div class="array-content">[${value.length} items]</div>`;
+                    value.forEach((item, index) => {
+                        html += `<div class="array-item"><strong>${index}:</strong> ${typeof item === 'object' ? JSON.stringify(item, null, 2) : item}</div>`;
+                    });
+                } else {
+                    html += `<pre class="json-content">${JSON.stringify(value, null, 2)}</pre>`;
+                }
+            } else {
+                html += `<span class="simple-value">${value}</span>`;
+            }
+            
+            html += `</div></div>`;
+        }
+        
+        html += '</div>';
+        return html;
+    }
+    
+    return `<div class="generic-content">${data}</div>`;
+}
+
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleString();
+    } catch (e) {
+        return dateString;
+    }
+}
+
+function formatProcessingMetadata(metadata) {
+    if (!metadata) return '<div class="text-muted">No metadata available</div>';
+    
+    let html = '<div class="metadata-grid">';
+    
+    for (const [key, value] of Object.entries(metadata)) {
+        html += `
+            <div class="metadata-row">
+                <span class="metadata-key">${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                <span class="metadata-value">
+        `;
+        
+        if (typeof value === 'object' && value !== null) {
+            html += `<pre class="metadata-json">${JSON.stringify(value, null, 2)}</pre>`;
+        } else {
+            html += value;
+        }
+        
+        html += `</span></div>`;
+    }
+    
+    html += '</div>';
+    return html;
+}
+
+async function viewRequestDetails(requestId) {
+    try {
+        // Show loading overlay
+        document.getElementById('loadingOverlay').style.display = 'flex';
+
+        const response = await adminAPI.getGenAIRequestById(requestId);
+        const request = response.data;
+        
+        // Store the full request data for copying
+        currentRequestData = request;
+
+        // Populate basic information
+        document.getElementById('requestId').value = request.id;
+        document.getElementById('requestType').value = request.request_type;
+        document.getElementById('userId').value = request.user_id;
+        document.getElementById('accountId').value = request.account_id;
+        document.getElementById('createdAt').value = formatDate(request.created_at);
+        document.getElementById('requestStatus').innerHTML = formatStatus(request.status);
+        
+        // Format and display request data based on type
+        const requestDataContainer = document.getElementById('requestDataContent');
+        if (request.request_type === 'update_tasks') {
+            requestDataContainer.innerHTML = formatUpdateTasksRequestData(request.request_data);
+        } else {
+            requestDataContainer.innerHTML = formatGenericData(request.request_data, 'Request Data');
+        }
+        
+        // Format and display result data
+        const resultDataContainer = document.getElementById('resultDataContent');
+        if (request.request_type === 'update_tasks') {
+            resultDataContainer.innerHTML = formatUpdateTasksResultData(request.result_data);
+        } else {
+            resultDataContainer.innerHTML = formatGenericData(request.result_data, 'Result Data');
+        }
+        
+        // Format and display processing metadata
+        document.getElementById('metadataContent').innerHTML = formatProcessingMetadata(request.processing_metadata);
+
+        // Handle error message
+        const errorSection = document.getElementById('errorSection');
+        const errorMessage = document.getElementById('errorMessage');
+        if (request.error_message) {
+            errorSection.classList.remove('d-none');
+            errorMessage.textContent = request.error_message;
+        } else {
+            errorSection.classList.add('d-none');
+        }
+
+        // Show the modal
+        const modal = new bootstrap.Modal(document.getElementById('requestDetailsModal'));
+        modal.show();
+
+        // Hide loading overlay
+        document.getElementById('loadingOverlay').style.display = 'none';
+    } catch (error) {
+        // Hide loading overlay on error
+        document.getElementById('loadingOverlay').style.display = 'none';
+        showError('Failed to load request details: ' + error.message);
+    }
+}
+
+// Store the current request data globally for copying
+let currentRequestData = null;
+
+function copyFullRequestJSON() {
+    if (!currentRequestData) {
+        showError('No request data available to copy');
+        return;
+    }
+    
+    try {
+        const jsonString = JSON.stringify(currentRequestData, null, 2);
+        navigator.clipboard.writeText(jsonString).then(() => {
+            showSuccess('Full request JSON copied to clipboard!');
+        }).catch(err => {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = jsonString;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            showSuccess('Full request JSON copied to clipboard!');
+        });
+    } catch (error) {
+        showError('Failed to copy JSON: ' + error.message);
+    }
+}
+
+// Utility function to debounce search input
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+</script>
+{% endblock %} 

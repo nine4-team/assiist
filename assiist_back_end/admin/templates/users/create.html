@@ -1,0 +1,688 @@
+{% extends "layout.html" %}
+
+{% block title %}Create User - Assiist Admin Portal{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+    <div class="page-header-content">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="display-5 text-gradient mb-2">Create New User</h1>
+                <p class="lead text-secondary mb-0">Add a new user to an existing account</p>
+            </div>
+            <div class="dashboard-icon icon-primary pulse">
+                <i class="fas fa-user-plus"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row fade-in-up">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0 text-primary">
+                    <i class="fas fa-user-plus me-2"></i>
+                    User Information
+                </h5>
+                <p class="text-secondary mb-0 small">All fields marked with * are required</p>
+            </div>
+            <div class="card-body">
+                <form id="createUserForm" class="needs-validation" novalidate>
+                    <!-- Account Selection -->
+                    <div class="account-selection mb-5">
+                        <h6 class="section-title text-primary">
+                            <i class="fas fa-building me-2"></i>
+                            Select Account *
+                        </h6>
+                        <hr class="section-divider">
+                        
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="mb-4">
+                                    <label for="accountSelect" class="form-label">Account *</label>
+                                    <select class="form-select form-select-lg" id="accountSelect" name="account_id" required>
+                                        <option value="" disabled selected>Choose an account...</option>
+                                        <!-- Options populated by JavaScript -->
+                                    </select>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle text-info me-1"></i>
+                                        Select the account this user will belong to
+                                    </div>
+                                    <div id="accountSelectLoading" class="text-center mt-2" style="display: none;">
+                                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                            <span class="visually-hidden">Loading accounts...</span>
+                                        </div>
+                                        <span class="ms-2 text-secondary">Loading accounts...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Selected Account Info -->
+                        <div id="selectedAccountInfo" class="selected-account-card" style="display: none;">
+                            <div class="d-flex align-items-center">
+                                <div class="account-icon">
+                                    <i class="fas fa-building"></i>
+                                </div>
+                                <div class="account-details">
+                                    <h6 id="selectedAccountName">Account Name</h6>
+                                    <small class="text-muted" id="selectedAccountId">Account ID</small>
+                                </div>
+                                <div class="ms-auto">
+                                    <span class="badge bg-primary">Selected</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- User Details -->
+                    <div class="user-details">
+                        <h6 class="section-title text-primary">
+                            <i class="fas fa-user me-2"></i>
+                            User Details
+                        </h6>
+                        <hr class="section-divider">
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label for="firstName" class="form-label">
+                                        <i class="fas fa-user text-primary me-2"></i>
+                                        First Name *
+                                    </label>
+                                    <input type="text" class="form-control" id="firstName" 
+                                           name="first_name" required placeholder="John"
+                                           pattern="[A-Za-z\s]+"
+                                           data-bs-toggle="tooltip" 
+                                           title="User's first name">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label for="lastName" class="form-label">
+                                        <i class="fas fa-user text-primary me-2"></i>
+                                        Last Name *
+                                    </label>
+                                    <input type="text" class="form-control" id="lastName" 
+                                           name="last_name" required placeholder="Smith"
+                                           pattern="[A-Za-z\s]+"
+                                           data-bs-toggle="tooltip" 
+                                           title="User's last name">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="mb-4">
+                                    <label for="email" class="form-label">
+                                        <i class="fas fa-envelope text-primary me-2"></i>
+                                        Email Address *
+                                    </label>
+                                    <input type="email" class="form-control" id="email" 
+                                           name="email" required placeholder="john@example.com"
+                                           data-bs-toggle="tooltip" 
+                                           title="User's email address for authentication">
+                                    <div class="form-text">
+                                        <i class="fas fa-shield-alt text-primary me-1"></i>
+                                        This email will be used for user authentication and notifications
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="mb-4">
+                                    <label for="password" class="form-label">
+                                        <i class="fas fa-lock text-primary me-2"></i>
+                                        Password *
+                                    </label>
+                                    <input type="password" class="form-control" id="password" 
+                                           name="password" required placeholder="Enter secure password"
+                                           minlength="6"
+                                           data-bs-toggle="tooltip" 
+                                           title="Password must be at least 6 characters">
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle text-info me-1"></i>
+                                        Password must be at least 6 characters long
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Form Actions -->
+                    <div class="form-actions pt-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <button type="button" class="btn btn-outline-secondary" onclick="window.history.back()">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                Cancel
+                            </button>
+                            <button type="submit" class="btn btn-primary btn-lg px-4">
+                                <i class="fas fa-user-plus me-2"></i>
+                                Create User
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Account Quick Info -->
+        <div id="accountQuickInfo" class="card glass mb-4" style="display: none;">
+            <div class="card-header">
+                <h6 class="mb-0 text-primary">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Account Information
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="account-info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Account Name:</span>
+                        <span class="info-value" id="quickAccountName">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Owner Status:</span>
+                        <span class="info-value" id="quickOwnerStatus">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Created:</span>
+                        <span class="info-value" id="quickCreated">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- User Creation Tips -->
+        <div class="card glass mb-4">
+            <div class="card-header">
+                <h6 class="mb-0 text-primary">
+                                                    <i class="fas fa-lightbulb me-2"></i>
+                                User Creation Tips
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="tips-list">
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-check text-primary"></i>
+                        </div>
+                        <div class="tip-content">
+                            <strong>Unique Emails:</strong> Each user must have a unique email address across the platform.
+                        </div>
+                    </div>
+                    
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-user-cog text-primary"></i>
+                        </div>
+                        <div class="tip-content">
+                            <strong>Account Access:</strong> Users will have access to their assigned account's resources and data.
+                        </div>
+                    </div>
+                    
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-envelope text-primary"></i>
+                        </div>
+                        <div class="tip-content">
+                            <strong>Email Verification:</strong> Users will receive a verification email after creation.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Result Card -->
+        <div id="resultCard" class="card" style="display: none;">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-check-circle text-success me-2"></i>
+                    Creation Result
+                </h6>
+            </div>
+            <div class="card-body" id="resultContent">
+                <!-- Result will be populated by JavaScript -->
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="card glass">
+            <div class="card-header">
+                <h6 class="mb-0 text-primary">
+                    <i class="fas fa-bolt me-2"></i>
+                    Quick Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="/admin/users" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-users me-2"></i>
+                        View All Users
+                    </a>
+                    <a href="/admin/accounts/create" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-plus me-2"></i>
+                        Create Account
+                    </a>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="clearForm()">
+                        <i class="fas fa-eraser me-2"></i>
+                        Clear Form
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.section-title {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.section-title.text-primary {
+    color: var(--accent-primary) !important;
+}
+
+.section-title.text-primary i {
+    color: var(--accent-primary) !important;
+}
+
+.section-divider {
+    border-color: var(--border-color);
+    margin-bottom: 1.5rem;
+}
+
+.selected-account-card {
+    background: linear-gradient(135deg, rgba(0, 212, 170, 0.1) 0%, rgba(0, 228, 187, 0.1) 100%);
+    border: 1px solid var(--success);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.account-icon {
+    width: 45px;
+    height: 45px;
+    border-radius: 10px;
+    background: var(--gradient-success);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+    margin-right: 1rem;
+}
+
+.account-details h6 {
+    color: var(--text-primary);
+    margin: 0;
+    font-weight: 600;
+}
+
+.form-select {
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+.form-select:focus {
+    background: var(--bg-secondary);
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+    box-shadow: 0 0 0 0.2rem rgba(233, 69, 96, 0.25);
+}
+
+.form-select option {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.account-info-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.info-value {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.tips-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.tip-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.tip-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.tip-content {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.tip-content strong {
+    color: var(--text-primary);
+}
+
+.form-actions {
+    border-top: 1px solid var(--border-color);
+    margin-top: 2rem;
+}
+
+/* Loading state for select */
+.form-select:disabled {
+    opacity: 0.6;
+}
+
+/* Enhanced form validation */
+.was-validated .form-select:valid,
+.form-select.is-valid {
+    border-color: var(--success);
+}
+
+.was-validated .form-select:invalid,
+.form-select.is-invalid {
+    border-color: var(--danger);
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let availableAccounts = [];
+let selectedAccount = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Load accounts for selection
+    loadAccounts();
+    
+    // Initialize form handler
+    const userFormHandler = new FormHandler('createUserForm', async function(data) {
+        showLoading('Creating User', 'Setting up the new user account...');
+        
+        try {
+            const result = await adminAPI.createUser(data);
+            hideLoading();
+            showResult('success', 'User created successfully!', result.data);
+            showSuccess('User created successfully!');
+        } catch (error) {
+            hideLoading();
+            showResult('error', 'User creation failed', { error: error.message });
+            throw error;
+        }
+    });
+    
+    // Account selection handler
+    document.getElementById('accountSelect').addEventListener('change', function(e) {
+        const accountId = e.target.value;
+        if (accountId) {
+            selectAccount(accountId);
+        } else {
+            clearAccountSelection();
+        }
+    });
+    
+    // Check for pre-selected account from URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    const preSelectedAccountId = urlParams.get('account_id');
+    if (preSelectedAccountId) {
+        // We'll select this account once accounts are loaded
+        setTimeout(() => {
+            const select = document.getElementById('accountSelect');
+            select.value = preSelectedAccountId;
+            selectAccount(preSelectedAccountId);
+        }, 1000);
+    }
+});
+
+async function loadAccounts() {
+    const select = document.getElementById('accountSelect');
+    const loading = document.getElementById('accountSelectLoading');
+    
+    // Show loading state
+    select.disabled = true;
+    loading.style.display = 'block';
+    
+    try {
+        const response = await adminAPI.getAllAccounts();
+        availableAccounts = response.data || [];
+        
+        // Clear existing options except the first one
+        select.innerHTML = '<option value="" disabled selected>Choose an account...</option>';
+        
+        if (availableAccounts.length === 0) {
+            select.innerHTML = '<option value="" disabled selected>No accounts available</option>';
+            showError('No accounts found. Please create an account first.');
+            return;
+        }
+        
+        // Populate account options
+        availableAccounts.forEach(account => {
+            const option = document.createElement('option');
+            option.value = account.id;
+            option.textContent = `${account.account_name || 'Unnamed Account'} (${account.id.substring(0, 8)}...)`;
+            option.dataset.accountData = JSON.stringify(account);
+            select.appendChild(option);
+        });
+        
+        select.disabled = false;
+        loading.style.display = 'none';
+        
+    } catch (error) {
+        console.error('Failed to load accounts:', error);
+        select.innerHTML = '<option value="" disabled selected>Failed to load accounts</option>';
+        loading.style.display = 'none';
+        showError('Failed to load accounts. Please refresh the page.');
+    }
+}
+
+function selectAccount(accountId) {
+    const account = availableAccounts.find(acc => acc.id === accountId);
+    if (!account) return;
+    
+    selectedAccount = account;
+    
+    // Update selected account info
+    const infoCard = document.getElementById('selectedAccountInfo');
+    const accountName = document.getElementById('selectedAccountName');
+    const accountIdSpan = document.getElementById('selectedAccountId');
+    
+    accountName.textContent = account.account_name || 'Unnamed Account';
+    accountIdSpan.textContent = account.id;
+    infoCard.style.display = 'block';
+    
+    // Update quick info card
+    updateAccountQuickInfo(account);
+    
+    // Show quick info card
+    document.getElementById('accountQuickInfo').style.display = 'block';
+}
+
+function clearAccountSelection() {
+    selectedAccount = null;
+    document.getElementById('selectedAccountInfo').style.display = 'none';
+    document.getElementById('accountQuickInfo').style.display = 'none';
+}
+
+function updateAccountQuickInfo(account) {
+    document.getElementById('quickAccountName').textContent = account.account_name || 'Unnamed Account';
+    
+    const ownerStatus = account.owner_id ? 'Has Owner' : 'No Owner';
+    document.getElementById('quickOwnerStatus').textContent = ownerStatus;
+    
+    document.getElementById('quickCreated').textContent = formatDateTime(account.created_on);
+}
+
+function showResult(type, message, data) {
+    const resultCard = document.getElementById('resultCard');
+    const resultContent = document.getElementById('resultContent');
+    
+    if (resultCard && resultContent) {
+        let html = '';
+        
+        if (type === 'success') {
+            html = `
+                <div class="alert alert-success border-0">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-check-circle fa-2x text-success me-3"></i>
+                        <div>
+                            <h6 class="alert-heading mb-1">${message}</h6>
+                            <p class="mb-0 small">The user has been created and added to the selected account.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="result-details">
+                    <h6 class="mb-3">
+                        <i class="fas fa-user text-primary me-2"></i>
+                        User Details
+                    </h6>
+                    <div class="user-summary">
+                        <div class="detail-row">
+                            <span class="detail-label">Name:</span>
+                            <span class="detail-value">${data.first_name} ${data.last_name}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Email:</span>
+                            <span class="detail-value">${data.email}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">User ID:</span>
+                            <span class="detail-value">
+                                <code>${data.id}</code>
+                                <button class="btn btn-sm btn-outline-secondary ms-1" 
+                                        onclick="copyToClipboard('${data.id}')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Account:</span>
+                            <span class="detail-value">${selectedAccount?.account_name || 'Unknown'}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <h6 class="mb-2">Next Steps:</h6>
+                        <div class="d-grid gap-2">
+                            <a href="/admin/users" class="btn btn-outline-success btn-sm">
+                                <i class="fas fa-users me-2"></i>
+                                View All Users
+                            </a>
+                            <button class="btn btn-outline-primary btn-sm" onclick="createAnotherUser()">
+                                <i class="fas fa-plus me-2"></i>
+                                Create Another User
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            html = `
+                <div class="alert alert-danger border-0">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-exclamation-triangle fa-2x text-danger me-3"></i>
+                        <div>
+                            <h6 class="alert-heading mb-1">${message}</h6>
+                            <p class="mb-0 small">Please check the error details below and try again.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="error-details">
+                    <h6 class="mb-3">
+                        <i class="fas fa-bug text-danger me-2"></i>
+                        Error Details
+                    </h6>
+                    <div class="bg-dark p-3 rounded">
+                        <pre class="mb-0 text-light"><code>${JSON.stringify(data, null, 2)}</code></pre>
+                    </div>
+                </div>
+            `;
+        }
+        
+        resultContent.innerHTML = html;
+        resultCard.style.display = 'block';
+        
+        // Animate the result card in
+        animateIn(resultCard, 'fade-in-up');
+        
+        // Scroll to result card
+        resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+}
+
+function clearForm() {
+    const form = document.getElementById('createUserForm');
+    if (form) {
+        form.reset();
+        // Clear validation states
+        const inputs = form.querySelectorAll('input, select');
+        inputs.forEach(input => {
+            input.classList.remove('is-valid', 'is-invalid');
+        });
+        const feedbacks = form.querySelectorAll('.invalid-feedback, .valid-feedback');
+        feedbacks.forEach(feedback => feedback.remove());
+    }
+    
+    clearAccountSelection();
+    
+    // Hide result card
+    const resultCard = document.getElementById('resultCard');
+    if (resultCard) {
+        resultCard.style.display = 'none';
+    }
+    
+    showSuccess('Form cleared successfully!');
+}
+
+function createAnotherUser() {
+    clearForm();
+    // Keep the same account selected if one was selected
+    if (selectedAccount) {
+        document.getElementById('accountSelect').value = selectedAccount.id;
+        selectAccount(selectedAccount.id);
+    }
+}
+</script>
+{% endblock %} 

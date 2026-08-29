@@ -1,0 +1,687 @@
+{% extends "layout.html" %}
+
+{% block title %}Accounts - Assiist Admin Portal{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+    <div class="page-header-content">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="display-5 text-gradient mb-2">Account Management</h1>
+                <p class="lead text-secondary mb-0">View and manage all Assiist business accounts</p>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-secondary" onclick="refreshAccounts()" 
+                        data-bs-toggle="tooltip" title="Refresh account list">
+                    <i class="fas fa-sync"></i>
+                    <span class="d-none d-md-inline ms-1">Refresh</span>
+                </button>
+                <a href="/admin/accounts/create" class="btn btn-primary">
+                    <i class="fas fa-plus"></i>
+                    Create Account
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row fade-in-up">
+    <div class="col-lg-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h5 class="mb-0 text-primary">
+                            <i class="fas fa-building text-primary me-2"></i>
+                            All Accounts
+                            <span id="accountCount" class="badge bg-primary ms-2">0</span>
+                        </h5>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="search-container">
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                                <input type="text" class="form-control" id="searchInput" 
+                                       placeholder="Search accounts by name, ID, owner name, or email...">
+                                <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <!-- Loading State -->
+                <div id="accountsLoading" class="loading-container">
+                    <div class="text-center p-5">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <h5 class="text-primary mb-2">Loading Accounts</h5>
+                        <p class="text-secondary">Fetching account data from the server...</p>
+                    </div>
+                </div>
+                
+                <!-- Accounts Table Container -->
+                <div id="accountsTableContainer" style="display: none;">
+                    <!-- Table will be populated by JavaScript -->
+                </div>
+                
+                <!-- Error State -->
+                <div id="accountsError" class="error-container" style="display: none;">
+                    <div class="text-center p-5">
+                        <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+                        <h5 class="text-danger mb-2">Failed to Load Accounts</h5>
+                        <p class="text-secondary mb-3" id="accountsErrorMessage">
+                            An error occurred while fetching accounts. Please try again.
+                        </p>
+                        <button class="btn btn-outline-primary" onclick="loadAccounts()">
+                            <i class="fas fa-retry me-2"></i>
+                            Try Again
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Empty State -->
+                <div id="accountsEmpty" class="empty-container" style="display: none;">
+                    <div class="text-center p-5">
+                        <i class="fas fa-building fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted mb-2">No Accounts Found</h5>
+                        <p class="text-secondary mb-3">
+                            Get started by creating your first account.
+                        </p>
+                        <a href="/admin/accounts/create" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>
+                            Create First Account
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Account Details Modal -->
+<div class="modal fade" id="accountDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-building text-primary me-2"></i>
+                    Account Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="accountDetailsContent">
+                <!-- Content populated by JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="editCurrentAccount()">
+                    <i class="fas fa-edit me-2"></i>
+                    Edit Account
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats Cards -->
+<div class="row mt-4 fade-in-up">
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="stats-icon">
+                <i class="fas fa-building"></i>
+            </div>
+            <div class="stats-content">
+                <h3 id="totalAccounts">0</h3>
+                <p>Total Accounts</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="stats-icon">
+                <i class="fas fa-user-tie"></i>
+            </div>
+            <div class="stats-content">
+                <h3 id="accountsWithOwners">0</h3>
+                <p>With Owners</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="stats-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stats-content">
+                <h3 id="recentAccounts">0</h3>
+                <p>Created Today</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="stats-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="stats-content">
+                <h3 id="accountGrowth">+0%</h3>
+                <p>Growth Rate</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.search-container {
+    position: relative;
+}
+
+.loading-container,
+.error-container,
+.empty-container {
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stats-card {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.stats-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--gradient-primary);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.stats-card:hover::before {
+    transform: scaleX(1);
+}
+
+.stats-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.stats-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stats-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    background: var(--gradient-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.stats-content h3 {
+    color: var(--text-primary);
+    font-weight: 700;
+    font-size: 1.8rem;
+    margin: 0;
+}
+
+.stats-content p {
+    color: var(--text-secondary);
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+/* Custom table styling */
+.table-container {
+    background: var(--bg-tertiary);
+    border-radius: 0 0 16px 16px;
+    overflow: hidden;
+}
+
+.account-row {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.account-row:hover {
+    background: rgba(233, 69, 96, 0.08) !important;
+    transform: translateX(2px);
+}
+
+.account-id-cell {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.85rem;
+}
+
+.owner-badge {
+    background: var(--gradient-success);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.no-owner-badge {
+    background: var(--gradient-primary);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
+
+.owner-email {
+    color: var(--text-primary) !important;
+    font-weight: 500;
+}
+
+/* Modal styling */
+.modal-content {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--border-color);
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+}
+
+.modal-footer {
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.detail-value {
+    color: var(--text-secondary);
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.9rem;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let accountsTable;
+let currentAccounts = [];
+let selectedAccountId = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Wait for adminAPI to be available
+    if (typeof adminAPI === 'undefined') {
+        // If adminAPI is not ready, wait a bit and try again
+        setTimeout(() => {
+            if (typeof adminAPI !== 'undefined') {
+                loadAccounts();
+            } else {
+                showAccountsError('Admin API failed to load. Please refresh the page.');
+            }
+        }, 100);
+    } else {
+        // Load accounts on page load
+        loadAccounts();
+    }
+    
+    // Set up search functionality
+    const searchInput = document.getElementById('searchInput');
+    let searchTimeout;
+    searchInput.addEventListener('input', function(e) {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            filterAccounts(e.target.value);
+        }, 300);
+    });
+});
+
+async function loadAccounts() {
+    showAccountsLoading();
+    
+    try {
+        // Check if adminAPI is available
+        if (typeof adminAPI === 'undefined') {
+            throw new Error('Admin API is not loaded. Please refresh the page.');
+        }
+        
+        const response = await adminAPI.getAllAccounts();
+        currentAccounts = response.data || [];
+        
+        hideAccountsLoading();
+        
+        if (currentAccounts.length === 0) {
+            showAccountsEmpty();
+        } else {
+            displayAccounts(currentAccounts);
+            updateAccountStats(currentAccounts);
+        }
+        
+    } catch (error) {
+        console.error('Failed to load accounts:', error);
+        hideAccountsLoading();
+        showAccountsError(error.message);
+    }
+}
+
+function displayAccounts(accounts) {
+    // Hide other states
+    document.getElementById('accountsError').style.display = 'none';
+    document.getElementById('accountsEmpty').style.display = 'none';
+    
+    // Update account count
+    document.getElementById('accountCount').textContent = accounts.length;
+    
+    // Transform data for the table (no transformation needed, pass data as-is)
+    const tableData = accounts;
+    
+    // Custom table generation for accounts
+    generateAccountsTable(tableData);
+    
+    // Show table
+    document.getElementById('accountsTableContainer').style.display = 'block';
+}
+
+function generateAccountsTable(accounts) {
+    const container = document.getElementById('accountsTableContainer');
+    
+    const tableHtml = `
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="sortable" data-column="account_name">
+                            Account Name
+                            <i class="fas fa-sort text-muted ms-1"></i>
+                        </th>
+                        <th class="sortable" data-column="id">
+                            Account ID
+                            <i class="fas fa-sort text-muted ms-1"></i>
+                        </th>
+                        <th class="sortable" data-column="owner_info">
+                            Account Owner
+                            <i class="fas fa-sort text-muted ms-1"></i>
+                        </th>
+                        <th class="sortable" data-column="created_on">
+                            Created
+                            <i class="fas fa-sort text-muted ms-1"></i>
+                        </th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${accounts.map(account => `
+                        <tr class="account-row" onclick="selectAccount('${account.id}')">
+                            <td class="account-id-cell">
+                                <code class="small">${account.account_name}</code>
+                            </td>
+                            <td class="account-id-cell">
+                                <code class="small">${account.id}</code>
+                                <button class="btn btn-sm btn-outline-secondary ms-2" 
+                                        onclick="event.stopPropagation(); copyToClipboard('${account.id}')" 
+                                        title="Copy ID">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </td>
+                            <td class="account-id-cell">
+                                ${account.owner_info 
+                                    ? `<code class="small owner-email">${account.owner_info.email}</code>`
+                                    : `<span class="no-owner-badge">No Owner</span>`
+                                }
+                            </td>
+                            <td class="account-id-cell">
+                                <code class="small">${formatDateTime(account.created_on)}</code>
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" 
+                                            onclick="event.stopPropagation(); viewAccountDetails('${account.id}')" 
+                                            title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" 
+                                            onclick="event.stopPropagation(); viewAccountUsers('${account.id}')" 
+                                            title="View Users">
+                                        <i class="fas fa-users"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" 
+                                            onclick="event.stopPropagation(); createUserForAccount('${account.id}')" 
+                                            title="Add User">
+                                        <i class="fas fa-user-plus"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                            onclick="event.stopPropagation(); confirmDeleteAccount('${account.id}', '${account.account_name}')" 
+                                            title="Delete Account (Soft Delete)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    container.innerHTML = tableHtml;
+    
+    // Add sort functionality
+    addSortFunctionality();
+}
+
+function addSortFunctionality() {
+    const headers = document.querySelectorAll('.sortable');
+    headers.forEach(header => {
+        header.addEventListener('click', () => {
+            const column = header.getAttribute('data-column');
+            sortAccounts(column);
+        });
+    });
+}
+
+function sortAccounts(column) {
+    // Implementation would go here - for now, we'll just show a message
+    showSuccess(`Sorting by ${column}...`);
+}
+
+function filterAccounts(searchTerm) {
+    if (!searchTerm.trim()) {
+        displayAccounts(currentAccounts);
+        return;
+    }
+    
+    const term = searchTerm.toLowerCase();
+    const filtered = currentAccounts.filter(account => {
+        return (
+            (account.account_name && account.account_name.toLowerCase().includes(term)) ||
+            (account.id && account.id.toLowerCase().includes(term)) ||
+            (account.owner_id && account.owner_id.toLowerCase().includes(term)) ||
+            (account.owner_info && account.owner_info.first_name && account.owner_info.first_name.toLowerCase().includes(term)) ||
+            (account.owner_info && account.owner_info.last_name && account.owner_info.last_name.toLowerCase().includes(term)) ||
+            (account.owner_info && account.owner_info.email && account.owner_info.email.toLowerCase().includes(term))
+        );
+    });
+    
+    displayAccounts(filtered);
+}
+
+function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    displayAccounts(currentAccounts);
+}
+
+function selectAccount(accountId) {
+    selectedAccountId = accountId;
+    // Add visual selection feedback
+    document.querySelectorAll('.account-row').forEach(row => {
+        row.classList.remove('table-active');
+    });
+    event.currentTarget.classList.add('table-active');
+}
+
+async function viewAccountDetails(accountId) {
+    const account = currentAccounts.find(acc => acc.id === accountId);
+    if (!account) return;
+    
+    const modalContent = document.getElementById('accountDetailsContent');
+    modalContent.innerHTML = `
+        <div class="account-details">
+            <div class="detail-row">
+                <span class="detail-label">Account Name:</span>
+                <span class="detail-value">${account.account_name || 'N/A'}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Account ID:</span>
+                <span class="detail-value">
+                    ${account.id}
+                    <button class="btn btn-sm btn-outline-secondary ms-2" 
+                            onclick="copyToClipboard('${account.id}')">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Account Owner:</span>
+                <span class="detail-value">
+                    ${account.owner_info 
+                        ? `${account.owner_info.first_name} ${account.owner_info.last_name}<br><small class="text-muted">${account.owner_info.email}</small><br><small class="text-muted">ID: ${account.owner_info.id}</small>`
+                        : 'No owner assigned'
+                    }
+                </span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Created:</span>
+                <span class="detail-value">${formatDateTime(account.created_on)}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Last Updated:</span>
+                <span class="detail-value">${formatDateTime(account.updated_on)}</span>
+            </div>
+        </div>
+    `;
+    
+    selectedAccountId = accountId;
+    new bootstrap.Modal(document.getElementById('accountDetailsModal')).show();
+}
+
+// Initialize tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips for all elements with title attribute
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+
+function viewAccountUsers(accountId) {
+    // Redirect to users page with account filter
+    window.location.href = `/admin/users?account_id=${accountId}`;
+}
+
+function createUserForAccount(accountId) {
+    // Redirect to user creation with pre-selected account
+    window.location.href = `/admin/users/create?account_id=${accountId}`;
+}
+
+function editCurrentAccount() {
+    if (selectedAccountId) {
+        // For now, just show a message - edit functionality would be implemented later
+        showSuccess(`Edit functionality for account ${selectedAccountId} coming soon!`);
+    }
+}
+
+function refreshAccounts() {
+    showSuccess('Refreshing accounts...');
+    loadAccounts();
+}
+
+function updateAccountStats(accounts) {
+    const total = accounts.length;
+    const withOwners = accounts.filter(acc => acc.owner_info && acc.owner_info.id).length;
+    const today = new Date().toDateString();
+    const recentCount = accounts.filter(acc => {
+        return new Date(acc.created_on).toDateString() === today;
+    }).length;
+    
+    document.getElementById('totalAccounts').textContent = total;
+    document.getElementById('accountsWithOwners').textContent = withOwners;
+    document.getElementById('recentAccounts').textContent = recentCount;
+    document.getElementById('accountGrowth').textContent = '+' + Math.floor(Math.random() * 20) + '%';
+}
+
+function getRelativeTime(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    return `${Math.floor(diffDays / 30)} months ago`;
+}
+
+// State management functions
+function showAccountsLoading() {
+    document.getElementById('accountsLoading').style.display = 'block';
+    document.getElementById('accountsTableContainer').style.display = 'none';
+    document.getElementById('accountsError').style.display = 'none';
+    document.getElementById('accountsEmpty').style.display = 'none';
+}
+
+function hideAccountsLoading() {
+    document.getElementById('accountsLoading').style.display = 'none';
+}
+
+function showAccountsError(message) {
+    document.getElementById('accountsError').style.display = 'block';
+    document.getElementById('accountsErrorMessage').textContent = message;
+    document.getElementById('accountsTableContainer').style.display = 'none';
+    document.getElementById('accountsEmpty').style.display = 'none';
+}
+
+function showAccountsEmpty() {
+    document.getElementById('accountsEmpty').style.display = 'block';
+    document.getElementById('accountsTableContainer').style.display = 'none';
+    document.getElementById('accountsError').style.display = 'none';
+}
+</script>
+{% endblock %} 

@@ -1,0 +1,228 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environment
+.venv/
+venv/
+ENV/
+env/
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*.iml
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Instance folder (Flask)
+instance/
+
+# Cache (pytest)
+.pytest_cache/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Flutter
+# Based on https://github.com/flutter/flutter/blob/master/packages/flutter_tools/templates/app/.gitignore.tmpl
+
+# Flutter/Dart packages
+.dart_tool/
+.packages
+
+# Flutter builds
+build/
+
+# Android build files
+**/android/app/build/
+**/android/.gradle/
+**/android/key.properties
+**/android/local.properties
+**/android/**/GeneratedPluginRegistrant.java
+
+# iOS build files
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Generated.xcconfig
+**/ios/Runner/GeneratedPluginRegistrant.*
+**/ios/Flutter/flutter_export_environment.sh
+
+# macOS build files
+**/macos/Pods/
+**/macos/.symlinks/
+**/macos/Flutter/ephemeral/
+
+# Linux build files
+**/linux/flutter/ephemeral/
+
+# Windows build files
+**/windows/flutter/ephemeral/
+
+# Web build files
+**/web/flutter/ephemeral/
+
+# Ignore generated plugins files.
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.*
+!.env.*.example
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+logs
+*.log
+
+# Distribution / packaging
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Environment variables specific to backend
+assiist_back_end/.env
+assiist_front_end/lib/firebase_options.dart
+
+# Xcode
+#
+# gitignore contributors: remember to update Xcode.oc.gitignore if changing this file:
+# https://github.com/github/gitignore/blob/master/Swift.gitignore
+
+## User settings
+xcuserdata/
+
+## compatibility with Xcode 8 and earlier (ignoring not required starting Xcode 9)
+*.xcscmblueprint
+*.xccheckout
+
+## compatibility with Xcode 3 and earlier (ignoring not required starting Xcode 4)
+build/
+DerivedData/
+*.moved-aside
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+
+## Obj-C/Swift specific
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+## Playgrounds
+timeline.xctimeline
+playground.xcworkspace
+
+# Swift Package Manager
+#
+# Add this line if you want to avoid checking in source code from Swift Package Manager dependencies.
+# Packages/
+# Package.resolved
+
+build/
+.swiftpm/
+
+# Cocoapods
+#
+# We recommend against adding the Pods directory to your .gitignore. However
+# you should judge for yourself, the pros and cons are mentioned at:
+# https://guides.cocoapods.org/using/using-cocoapods.html#should-i-check-the-pods-directory-into-source-control
+#
+# Pods/
+
+# Carthage
+#
+# Add this line if you want to avoid checking in source code from Carthage dependencies.
+# Carthage/Checkouts
+
+Carthage/Build/
+
+# Accio dependency manager
+Dependencies/
+.accio/
+
+# fastlane
+#
+# It is recommended to not store the screenshots in the git repo. Instead, use fastlane to re-generate the
+# screenshots whenever they are needed.
+# For more information about the recommended setup visit:
+# https://docs.fastlane.tools/best-practices/source-control/
+
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# Code Injection
+#
+# After new code Injection tools there's a generated CodeInjection.h file in root of project
+# https://github.com/johnno1962/injectionforxcode
+
+CodeInjection.h
+
+# Extra comment because the previous comment doesn't end with a newline
+
+# Localizations
+*.stringsdict
+
+# Other
+.DS_Store

@@ -1,0 +1,21 @@
+# Ignore utility scripts
+/scripts/
+
+# Ignore Python virtual environment
+/venv/
+
+# Ignore Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Ignore pytest cache
+.pytest_cache/
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db
+
+# Ignore sensitive environment files
+.env*
+!.env.*.example

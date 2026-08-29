@@ -1,0 +1,837 @@
+{% extends "layout.html" %}
+
+{% block title %}Users - Assiist Admin Portal{% endblock %}
+
+{% block content %}
+<div class="page-header fade-in-up">
+    <div class="page-header-content">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="display-5 text-gradient mb-2">User Management</h1>
+                <p class="lead text-secondary mb-0">View and manage all users across accounts</p>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-secondary" onclick="refreshUsers()" 
+                        data-bs-toggle="tooltip" title="Refresh user list">
+                    <i class="fas fa-sync"></i>
+                    <span class="d-none d-md-inline ms-1">Refresh</span>
+                </button>
+                <a href="/admin/users/create" class="btn btn-primary">
+                    <i class="fas fa-user-plus"></i>
+                    Create User
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row fade-in-up">
+    <div class="col-lg-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="row align-items-center">
+                    <div class="col-md-4">
+                        <h5 class="mb-0 text-primary">
+                            <i class="fas fa-users text-primary me-2"></i>
+                            All Users
+                            <span id="userCount" class="badge bg-primary ms-2">0</span>
+                        </h5>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="filter-container">
+                            <select class="form-select" id="accountFilter">
+                                <option value="">All Accounts</option>
+                                <!-- Options populated by JavaScript -->
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="search-container">
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                                <input type="text" class="form-control" id="searchInput" 
+                                       placeholder="Search users by name, email, or ID...">
+                                <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <!-- Loading State -->
+                <div id="usersLoading" class="loading-container">
+                    <div class="text-center p-5">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <h5 class="text-primary mb-2">Loading Users</h5>
+                        <p class="text-secondary">Fetching user data from the server...</p>
+                    </div>
+                </div>
+                
+                <!-- Users Table Container -->
+                <div id="usersTableContainer" style="display: none;">
+                    <!-- Table will be populated by JavaScript -->
+                </div>
+                
+                <!-- Error State -->
+                <div id="usersError" class="error-container" style="display: none;">
+                    <div class="text-center p-5">
+                        <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+                        <h5 class="text-danger mb-2">Failed to Load Users</h5>
+                        <p class="text-secondary mb-3" id="usersErrorMessage">
+                            An error occurred while fetching users. Please try again.
+                        </p>
+                        <button class="btn btn-outline-primary" onclick="loadUsers()">
+                            <i class="fas fa-retry me-2"></i>
+                            Try Again
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Empty State -->
+                <div id="usersEmpty" class="empty-container" style="display: none;">
+                    <div class="text-center p-5">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted mb-2">No Users Found</h5>
+                        <p class="text-secondary mb-3">
+                            Get started by creating your first user.
+                        </p>
+                        <a href="/admin/users/create" class="btn btn-primary">
+                            <i class="fas fa-user-plus me-2"></i>
+                            Create First User
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- User Details Modal -->
+<div class="modal fade" id="userDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user text-primary me-2"></i>
+                    User Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="userDetailsContent">
+                <!-- Content populated by JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="editCurrentUser()">
+                    <i class="fas fa-edit me-2"></i>
+                    Edit User
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats Cards -->
+<div class="row mt-4 fade-in-up">
+    <div class="col-md-3">
+        <div class="stats-card stats-primary">
+            <div class="stats-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stats-content">
+                <h3 id="totalUsers">0</h3>
+                <p>Total Users</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card stats-primary">
+            <div class="stats-icon">
+                <i class="fas fa-building"></i>
+            </div>
+            <div class="stats-content">
+                <h3 id="uniqueAccounts">0</h3>
+                <p>Unique Accounts</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card stats-primary">
+            <div class="stats-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stats-content">
+                <h3 id="recentUsers">0</h3>
+                <p>Created Today</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card stats-primary">
+            <div class="stats-icon">
+                <i class="fas fa-envelope"></i>
+            </div>
+            <div class="stats-content">
+                <h3 id="verifiedUsers">0</h3>
+                <p>Verified Users</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.search-container,
+.filter-container {
+    position: relative;
+}
+
+.loading-container,
+.error-container,
+.empty-container {
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stats-card {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stats-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.stats-card:hover::before {
+    transform: scaleX(1);
+}
+
+.stats-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.stats-success::before {
+    background: var(--gradient-success);
+}
+
+.stats-primary::before {
+    background: var(--gradient-primary);
+}
+
+.stats-info::before {
+    background: linear-gradient(135deg, #17a2b8 0%, #1cbccf 100%);
+}
+
+.stats-warning::before {
+    background: linear-gradient(135deg, #ffc107 0%, #ffcc33 100%);
+}
+
+.stats-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.stats-success .stats-icon {
+    background: var(--gradient-success);
+}
+
+.stats-primary .stats-icon {
+    background: var(--gradient-primary);
+}
+
+.stats-info .stats-icon {
+    background: linear-gradient(135deg, #17a2b8 0%, #1cbccf 100%);
+}
+
+.stats-warning .stats-icon {
+    background: linear-gradient(135deg, #ffc107 0%, #ffcc33 100%);
+}
+
+.stats-content h3 {
+    color: var(--text-primary);
+    font-weight: 700;
+    font-size: 1.8rem;
+    margin: 0;
+}
+
+.stats-content p {
+    color: var(--text-secondary);
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+/* Custom table styling */
+.user-row {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.user-row:hover {
+    background: rgba(0, 212, 170, 0.08) !important;
+    transform: translateX(2px);
+}
+
+
+
+
+
+.account-badge {
+    background: var(--gradient-primary);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.account-badge:hover {
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(233, 69, 96, 0.3);
+}
+
+.verified-badge {
+    background: var(--gradient-success);
+    color: white;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.unverified-badge {
+    background: var(--text-secondary);
+    color: white;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+}
+
+/* Modal styling */
+.modal-content {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--border-color);
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+}
+
+.modal-footer {
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.detail-value {
+    color: var(--text-secondary);
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.9rem;
+}
+
+.user-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, rgba(0, 212, 170, 0.1) 0%, rgba(0, 228, 187, 0.1) 100%);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.user-header-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--gradient-success);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 1.5rem;
+}
+
+.user-header-info h6 {
+    color: var(--text-primary);
+    margin: 0;
+    font-weight: 600;
+}
+
+.user-header-info p {
+    color: var(--text-secondary);
+    margin: 0;
+    font-size: 0.9rem;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let usersTable;
+let currentUsers = [];
+let availableAccounts = [];
+let selectedUserId = null;
+let currentFilter = '';
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize data table
+    usersTable = new DataTable('usersTableContainer', {
+        searchable: false, // We handle search manually
+        sortable: true,
+        customRowClass: 'user-row'
+    });
+    
+    // Load users and accounts on page load
+    Promise.all([loadUsers(), loadAccountsForFilter()]);
+    
+    // Set up search functionality
+    const searchInput = document.getElementById('searchInput');
+    let searchTimeout;
+    searchInput.addEventListener('input', function(e) {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            filterUsers(e.target.value, currentFilter);
+        }, 300);
+    });
+    
+    // Set up account filter
+    document.getElementById('accountFilter').addEventListener('change', function(e) {
+        currentFilter = e.target.value;
+        filterUsers(searchInput.value, currentFilter);
+    });
+    
+    // Check for account filter from URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    const accountFilter = urlParams.get('account_id');
+    if (accountFilter) {
+        setTimeout(() => {
+            document.getElementById('accountFilter').value = accountFilter;
+            currentFilter = accountFilter;
+            filterUsers('', accountFilter);
+        }, 1000);
+    }
+});
+
+async function loadUsers() {
+    showUsersLoading();
+    
+    try {
+        const response = await adminAPI.getAllUsers();
+        currentUsers = response.data || [];
+        
+        hideUsersLoading();
+        
+        if (currentUsers.length === 0) {
+            showUsersEmpty();
+        } else {
+            displayUsers(currentUsers);
+            updateUserStats(currentUsers);
+        }
+        
+    } catch (error) {
+        console.error('Failed to load users:', error);
+        hideUsersLoading();
+        showUsersError(error.message);
+    }
+}
+
+async function loadAccountsForFilter() {
+    try {
+        const response = await adminAPI.getAllAccounts();
+        availableAccounts = response.data || [];
+        
+        const filter = document.getElementById('accountFilter');
+        // Clear existing options except the first one
+        filter.innerHTML = '<option value="">All Accounts</option>';
+        
+        availableAccounts.forEach(account => {
+            const option = document.createElement('option');
+            option.value = account.id;
+            option.textContent = account.account_name || `Account ${account.id.substring(0, 8)}...`;
+            filter.appendChild(option);
+        });
+        
+    } catch (error) {
+        console.error('Failed to load accounts for filter:', error);
+    }
+}
+
+function displayUsers(users) {
+    // Hide other states
+    document.getElementById('usersError').style.display = 'none';
+    document.getElementById('usersEmpty').style.display = 'none';
+    
+    // Update user count
+    document.getElementById('userCount').textContent = users.length;
+    
+    // Generate users table
+    generateUsersTable(users);
+    
+    // Show table
+    document.getElementById('usersTableContainer').style.display = 'block';
+}
+
+function generateUsersTable(users) {
+    const container = document.getElementById('usersTableContainer');
+    
+    if (users.length === 0) {
+        container.innerHTML = `
+            <div class="text-center p-4">
+                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No users match your search</h5>
+                <p class="text-muted">Try adjusting your search criteria.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const tableHtml = `
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="sortable" data-column="name">
+                            User
+                            <i class="fas fa-sort text-muted ms-1"></i>
+                        </th>
+                        <th class="sortable" data-column="email">
+                            Email
+                            <i class="fas fa-sort text-muted ms-1"></i>
+                        </th>
+                        <th class="sortable" data-column="id">
+                            User ID
+                            <i class="fas fa-sort text-muted ms-1"></i>
+                        </th>
+                        <th class="sortable" data-column="account_id">
+                            Account
+                            <i class="fas fa-sort text-muted ms-1"></i>
+                        </th>
+                        <th class="sortable" data-column="created_on">
+                            Created
+                            <i class="fas fa-sort text-muted ms-1"></i>
+                        </th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${users.map(user => {
+                        const initials = getInitials(user.first_name, user.last_name);
+                        
+                        return `
+                            <tr class="user-row" onclick="selectUser('${user.id}')">
+                                <td class="account-id-cell">
+                                    <code class="small">${user.first_name || ''} ${user.last_name || ''}</code>
+                                </td>
+                                <td class="account-id-cell">
+                                    <code class="small">${user.email}</code>
+                                </td>
+                                <td class="account-id-cell">
+                                    <code class="small">${user.id}</code>
+                                    <button class="btn btn-sm btn-outline-secondary ms-2" 
+                                            onclick="event.stopPropagation(); copyToClipboard('${user.id}')" 
+                                            title="Copy ID">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </td>
+                                <td class="account-id-cell">
+                                    <code class="small">${user.account_info?.account_name || 'No Account'}</code>
+                                </td>
+                                <td class="account-id-cell">
+                                    <code class="small">${formatDateTime(user.created_on)}</code>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                onclick="event.stopPropagation(); viewUserDetails('${user.id}')" 
+                                                title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                onclick="event.stopPropagation(); editUser('${user.id}')" 
+                                                title="Edit User">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                onclick="event.stopPropagation(); viewUserAccount('${user.account_id}')" 
+                                                title="View Account">
+                                            <i class="fas fa-building"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                onclick="event.stopPropagation(); confirmDeleteUser('${user.id}', '${user.first_name} ${user.last_name}', '${user.email}')" 
+                                                title="Delete User (Soft Delete)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    container.innerHTML = tableHtml;
+    
+    // Add sort functionality
+    addSortFunctionality();
+}
+
+function getInitials(firstName, lastName) {
+    const first = (firstName || '').charAt(0).toUpperCase();
+    const last = (lastName || '').charAt(0).toUpperCase();
+    return first + last || 'U';
+}
+
+function addSortFunctionality() {
+    const headers = document.querySelectorAll('.sortable');
+    headers.forEach(header => {
+        header.addEventListener('click', () => {
+            const column = header.getAttribute('data-column');
+            sortUsers(column);
+        });
+    });
+}
+
+function sortUsers(column) {
+    // Implementation would go here - for now, we'll just show a message
+    showSuccess(`Sorting by ${column}...`);
+}
+
+function filterUsers(searchTerm, accountFilter) {
+    let filtered = [...currentUsers];
+    
+    // Apply account filter
+    if (accountFilter) {
+        filtered = filtered.filter(user => user.account_id === accountFilter);
+    }
+    
+    // Apply search filter
+    if (searchTerm && searchTerm.trim()) {
+        const term = searchTerm.toLowerCase();
+        filtered = filtered.filter(user => {
+            return (
+                (user.first_name && user.first_name.toLowerCase().includes(term)) ||
+                (user.last_name && user.last_name.toLowerCase().includes(term)) ||
+                (user.email && user.email.toLowerCase().includes(term)) ||
+                (user.id && user.id.toLowerCase().includes(term))
+            );
+        });
+    }
+    
+    displayUsers(filtered);
+}
+
+function clearSearch() {
+    document.getElementById('searchInput').value = '';
+    filterUsers('', currentFilter);
+}
+
+function selectUser(userId) {
+    selectedUserId = userId;
+    // Add visual selection feedback
+    document.querySelectorAll('.user-row').forEach(row => {
+        row.classList.remove('table-active');
+    });
+    event.currentTarget.classList.add('table-active');
+}
+
+async function viewUserDetails(userId) {
+    const user = currentUsers.find(u => u.id === userId);
+    if (!user) return;
+    
+    const account = availableAccounts.find(acc => acc.id === user.account_id);
+    const modalContent = document.getElementById('userDetailsContent');
+    
+    modalContent.innerHTML = `
+        <div class="user-header">
+            <div class="user-header-avatar">
+                ${getInitials(user.first_name, user.last_name)}
+            </div>
+            <div class="user-header-info">
+                <h6>${user.first_name} ${user.last_name}</h6>
+                <p>${user.email}</p>
+            </div>
+        </div>
+        
+        <div class="user-details">
+            <div class="detail-row">
+                <span class="detail-label">First Name:</span>
+                <span class="detail-value">${user.first_name || 'N/A'}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Last Name:</span>
+                <span class="detail-value">${user.last_name || 'N/A'}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Email:</span>
+                <span class="detail-value">${user.email}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">User ID:</span>
+                <span class="detail-value">
+                    ${user.id}
+                    <button class="btn btn-sm btn-outline-secondary ms-2" 
+                            onclick="copyToClipboard('${user.id}')">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Account:</span>
+                <span class="detail-value">
+                    ${account?.account_name || 'Unknown Account'}
+                    <br>
+                    <small class="text-muted">${user.account_id}</small>
+                </span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Created:</span>
+                <span class="detail-value">${formatDateTime(user.created_on)}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Last Updated:</span>
+                <span class="detail-value">${formatDateTime(user.updated_on)}</span>
+            </div>
+        </div>
+    `;
+    
+    selectedUserId = userId;
+    new bootstrap.Modal(document.getElementById('userDetailsModal')).show();
+}
+
+// Initialize tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips for all elements with title attribute
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+
+function editUser(userId) {
+    // For now, just show a message - edit functionality would be implemented later
+    showSuccess(`Edit functionality for user ${userId} coming soon!`);
+}
+
+function viewUserAccount(accountId) {
+    // Redirect to accounts page with account highlighted
+    window.location.href = `/admin/accounts?highlight=${accountId}`;
+}
+
+function editCurrentUser() {
+    if (selectedUserId) {
+        editUser(selectedUserId);
+    }
+}
+
+function refreshUsers() {
+    showSuccess('Refreshing users...');
+    Promise.all([loadUsers(), loadAccountsForFilter()]);
+}
+
+function updateUserStats(users) {
+    const total = users.length;
+    const uniqueAccounts = new Set(users.map(u => u.account_id)).size;
+    const today = new Date().toDateString();
+    const recentCount = users.filter(user => {
+        return new Date(user.created_on).toDateString() === today;
+    }).length;
+    const verifiedCount = users.length; // Assume all are verified for now
+    
+    document.getElementById('totalUsers').textContent = total;
+    document.getElementById('uniqueAccounts').textContent = uniqueAccounts;
+    document.getElementById('recentUsers').textContent = recentCount;
+    document.getElementById('verifiedUsers').textContent = verifiedCount;
+}
+
+function getRelativeTime(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    return `${Math.floor(diffDays / 30)} months ago`;
+}
+
+// State management functions
+function showUsersLoading() {
+    document.getElementById('usersLoading').style.display = 'block';
+    document.getElementById('usersTableContainer').style.display = 'none';
+    document.getElementById('usersError').style.display = 'none';
+    document.getElementById('usersEmpty').style.display = 'none';
+}
+
+function hideUsersLoading() {
+    document.getElementById('usersLoading').style.display = 'none';
+}
+
+function showUsersError(message) {
+    document.getElementById('usersError').style.display = 'block';
+    document.getElementById('usersErrorMessage').textContent = message;
+    document.getElementById('usersTableContainer').style.display = 'none';
+    document.getElementById('usersEmpty').style.display = 'none';
+}
+
+function showUsersEmpty() {
+    document.getElementById('usersEmpty').style.display = 'block';
+    document.getElementById('usersTableContainer').style.display = 'none';
+    document.getElementById('usersError').style.display = 'none';
+}
+</script>
+{% endblock %} 

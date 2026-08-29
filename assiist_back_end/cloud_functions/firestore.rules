@@ -1,0 +1,101 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow authenticated users to read their own generation requests (legacy)
+    match /generationRequests/{requestId} {
+      allow read: if request.auth != null;  // Temporarily allow all authenticated reads for debugging
+      allow write: if false; // Only backend can write
+    }
+    
+    // NEW: Unified genai_requests collection - allow authenticated users to read their own requests
+    match /genai_requests/{requestId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Only backend can write
+    }
+    
+    // NEW: Allow authenticated users to read operation-specific generation requests
+    match /quickDraftRequests/{requestId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Only backend can write
+    }
+    
+    match /reviseDraftRequests/{requestId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Only backend can write
+    }
+    
+    match /processNoteRequests/{requestId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Only backend can write
+    }
+    
+    match /updateTasksRequests/{requestId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Only backend can write
+    }
+    
+    match /updateContextRequests/{requestId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Only backend can write
+    }
+    
+    // Allow authenticated users to read/write their own tasks
+    match /tasks/{taskId} {
+      allow read, write: if request.auth != null && 
+                           request.auth.uid == resource.data.user_id;
+    }
+    
+    // Allow authenticated users to read/write their own contacts
+    match /contacts/{contactId} {
+      allow read, write: if request.auth != null && 
+                           request.auth.uid == resource.data.user_id;
+    }
+    
+    // Allow authenticated users to read/write their own revision histories
+    match /revision_histories/{historyId} {
+      allow read, write: if request.auth != null && 
+                           request.auth.uid == resource.data.user_id;
+    }
+
+    // Allow authenticated users to create and manage their own device tokens for push notifications
+    match /users/{userId}/device_tokens/{tokenId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Allow authenticated users to read/write their own user data
+    match /users/{userId} {
+      allow read, write: if request.auth != null && 
+                           request.auth.uid == userId;
+      
+      // Allow authenticated users to read/write their own metrics
+      match /metrics/{contactId} {
+        allow read, write: if request.auth != null && 
+                             request.auth.uid == userId;
+        
+        // Allow idempotency keys for metrics
+        match /idempotency_keys/{keyId} {
+          allow read, write: if request.auth != null && 
+                               request.auth.uid == userId;
+        }
+      }
+    }
+    
+    // Allow authenticated users to read account data they belong to
+    match /accounts/{accountId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Only backend can write accounts
+    }
+    
+    // NEW: Unified genairequests collection - allow authenticated users to read their own requests
+    match /genairequests/{requestId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Only backend can write
+    }
+    
+    // Allow authenticated users to read their own audio transcriptions
+    match /audio_transcriptions/{transcriptionId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.user_id;
+      allow write: if false; // Only backend / cloud functions write
+    }
+  }
+} 

@@ -1,0 +1,13 @@
+firebase-functions==0.4.2
+firebase-admin==6.5.0
+google-cloud-functions==1.16.0
+google-cloud-firestore==2.16.0
+google-cloud-tasks==2.16.0
+python-dotenv==1.0.0
+anthropic==0.54.0
+google-generativeai==0.7.2
+openai==1.58.1
+requests==2.31.0
+datetime>=2.0.0
+pydub==0.25.1
+functions-framework==3.5.0

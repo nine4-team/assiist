@@ -1,0 +1,58 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "database": "assiist-app"
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "runtime": "python312",
+      "timeout": "3600s",
+      "memory": "1GB",
+      "serviceConfig": {
+        "environmentVariables": {
+          "API_URL": "https://assiist-api-5110589070.us-central1.run.app/api/v1"
+        }
+      },
+      "ignore": [
+        "venv/",
+        "__pycache__/",
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ],
+      "secrets": [
+        "ANTHROPIC_API_KEY",
+        "GEMINI_API_KEY",
+        "ASSIIST_API_KEY"
+      ]
+    }
+  ],
+  "extensions": {
+    "algolia/firestore-algolia-search": {
+      "location": "us-central1",
+      "ref": "algolia/firestore-algolia-search",
+      "params": {
+        "collectionPath": "contacts",
+        "indexName": "${ALGOLIA_INDEX_NAME}",
+        "fields": "first_name,last_name,emails,addressed_as,business_name,tags,account_id,is_deleted",
+        "transformFunction": "data => ({ ...data, objectID: context.params.documentId })"
+      }
+    }
+  },
+  "emulators": {
+    "functions": {
+      "port": 5001
+    },
+    "firestore": {
+      "port": 8080
+    },
+    "ui": {
+      "enabled": true,
+      "port": 4000
+    }
+  }
+}
